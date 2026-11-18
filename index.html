@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <meta name="theme-color" content="#070b10">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>OVERWATCH GLOBAL // Worldwide Threat, Maritime &amp; Live Flight Telemetry</title>
     
     <!-- Google Fonts & FontAwesome -->
@@ -33,7 +34,10 @@
             --text-muted: #94a3b8;
             --font-mono: 'Share Tech Mono', monospace;
             --font-sans: 'Inter', sans-serif;
+            --safe-top: env(safe-area-inset-top, 0px);
             --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
         }
 
         * {
@@ -43,22 +47,31 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
+        html, body {
             background-color: var(--bg-primary);
             color: var(--text-main);
             font-family: var(--font-sans);
             height: 100vh;
             height: 100dvh;
+            width: 100%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            overscroll-behavior: none;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        button, .tab-btn, .time-btn, .legend-row, .flight-hud-header {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
 
         /* Header Bar */
         header {
             background-color: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
-            padding: calc(0.45rem + env(safe-area-inset-top, 0px)) 1.1rem 0.45rem 0.9rem;
+            padding: calc(0.45rem + var(--safe-top)) calc(0.9rem + var(--safe-right)) 0.45rem calc(0.9rem + var(--safe-left));
             display: flex;
             flex-direction: column;
             gap: 0.35rem;
@@ -77,7 +90,7 @@
         .brand {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.7rem;
             min-width: 0;
             justify-self: start;
         }
@@ -93,6 +106,13 @@
         .radar-sweep-beam {
             transform-origin: 24px 24px;
             animation: radarSpin 3.6s linear infinite;
+            will-change: transform;
+        }
+
+        body.app-paused .radar-sweep-beam,
+        body.app-paused .gt-pulse-dot,
+        body.app-paused .priority-alert-badge {
+            animation-play-state: paused !important;
         }
 
         @keyframes radarSpin {
@@ -148,7 +168,6 @@
             align-items: center;
             justify-content: flex-end;
             justify-self: end;
-            padding-right: 1.2rem;
             font-family: var(--font-mono);
         }
 
@@ -217,13 +236,13 @@
             50% { opacity: 0.35; transform: scale(0.8); }
         }
 
-        /* Priority Emergency Alert Banner (Squawk 7500/7600/7700 or M6.0+ Quake) */
+        /* Priority Emergency Alert Banner */
         .priority-alert-banner {
             display: none;
-            background: linear-gradient(90deg, rgba(159, 0, 15, 0.95), rgba(127, 29, 29, 0.95));
+            background: linear-gradient(90deg, rgba(159, 0, 15, 0.96), rgba(127, 29, 29, 0.96));
             border-bottom: 1px solid #f87171;
             color: #ffffff;
-            padding: 0.34rem 0.9rem;
+            padding: 0.34rem calc(0.85rem + var(--safe-right)) 0.34rem calc(0.85rem + var(--safe-left));
             font-family: var(--font-mono);
             font-size: 0.74rem;
             align-items: center;
@@ -242,6 +261,7 @@
             align-items: center;
             gap: 0.55rem;
             min-width: 0;
+            flex: 1;
             overflow: hidden;
         }
 
@@ -258,9 +278,11 @@
 
         .priority-alert-text {
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
+        .priority-alert-text::-webkit-scrollbar { display: none; }
 
         .priority-alert-actions {
             display: flex;
@@ -270,17 +292,23 @@
         }
 
         .alert-action-btn {
-            background: rgba(7, 11, 16, 0.7);
+            background: rgba(7, 11, 16, 0.75);
             border: 1px solid rgba(255, 255, 255, 0.45);
             color: #ffffff;
             font-family: var(--font-mono);
-            font-size: 0.66rem;
-            padding: 0.14rem 0.48rem;
+            font-size: 0.68rem;
+            padding: 0.22rem 0.52rem;
             border-radius: 2px;
             cursor: pointer;
+            min-height: 30px;
+            min-width: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
         }
 
-        .alert-action-btn:hover {
+        .alert-action-btn:hover, .alert-action-btn:active {
             background: #ffffff;
             color: #9F000F;
         }
@@ -308,7 +336,7 @@
         .panel-header {
             background-color: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
-            padding: 0.5rem 0.75rem;
+            padding: 0.48rem 0.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -318,6 +346,13 @@
             text-transform: uppercase;
             gap: 0.4rem;
             flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .map-layer-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
             flex-wrap: wrap;
         }
 
@@ -340,11 +375,12 @@
 
         .search-input-wrap i {
             position: absolute;
-            left: 0.5rem;
+            left: 0.55rem;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-muted);
-            font-size: 0.68rem;
+            font-size: 0.76rem;
+            pointer-events: none;
         }
 
         .search-input {
@@ -353,10 +389,11 @@
             border: 1px solid var(--border-color);
             color: var(--text-main);
             font-family: var(--font-mono);
-            font-size: 0.72rem;
-            padding: 0.28rem 1.5rem 0.28rem 1.55rem;
+            font-size: 0.74rem;
+            padding: 0.32rem 2rem 0.32rem 1.7rem;
             border-radius: 3px;
             outline: none;
+            min-height: 30px;
         }
 
         .search-input:focus {
@@ -365,21 +402,25 @@
 
         .search-clear-btn {
             position: absolute;
-            right: 0.4rem;
+            right: 0.25rem;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 0.7rem;
+            font-size: 0.85rem;
+            width: 30px;
+            height: 30px;
             display: none;
+            align-items: center;
+            justify-content: center;
         }
 
         .time-filter-group {
             display: flex;
             align-items: center;
-            gap: 0.2rem;
+            gap: 0.22rem;
             flex-shrink: 0;
         }
 
@@ -388,10 +429,11 @@
             border: 1px solid var(--border-color);
             color: var(--text-muted);
             font-family: var(--font-mono);
-            font-size: 0.64rem;
-            padding: 0.24rem 0.38rem;
+            font-size: 0.66rem;
+            padding: 0.28rem 0.42rem;
             border-radius: 2px;
             cursor: pointer;
+            min-height: 30px;
         }
 
         .time-btn.active, .time-btn:hover {
@@ -400,7 +442,7 @@
             color: var(--accent-cyan);
         }
 
-        /* Responsive, non-overlapping filter strip */
+        /* Responsive Filter Strip */
         .filter-strip {
             display: flex;
             flex-wrap: wrap;
@@ -415,8 +457,8 @@
         .filter-strip .tab-btn {
             flex: 1 1 auto;
             min-width: 0;
-            padding: 0.24rem 0.42rem;
-            font-size: 0.67rem;
+            padding: 0.26rem 0.44rem;
+            font-size: 0.68rem;
             text-align: center;
         }
 
@@ -430,8 +472,8 @@
             border-radius: 3px;
             cursor: pointer;
             white-space: nowrap;
-            transition: all 0.2s;
-            min-height: 26px;
+            transition: background 0.18s, border-color 0.18s, color 0.18s;
+            min-height: 28px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -472,7 +514,8 @@
             flex: 1;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            padding: 0.75rem;
+            overscroll-behavior-y: contain;
+            padding: 0.75rem 0.75rem calc(1.2rem + var(--safe-bottom)) 0.75rem;
         }
 
         /* Scrollbars */
@@ -495,6 +538,16 @@
             min-height: 0;
             background-color: #05080c;
             z-index: 1;
+            touch-action: none;
+        }
+
+        /* Tap-safe pin wrapper (gives 28x28px touch area without bloating visual icon) */
+        .tactical-pin-hit {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 28px !important;
+            height: 28px !important;
         }
 
         /* Dark Tactical Leaflet Overrides */
@@ -505,8 +558,8 @@
 
         .leaflet-control-attribution {
             position: fixed !important;
-            bottom: 0 !important;
-            right: 0 !important;
+            bottom: var(--safe-bottom) !important;
+            right: var(--safe-right) !important;
             z-index: 400 !important;
             font-size: 8px !important;
             line-height: 1.1 !important;
@@ -532,6 +585,20 @@
             border-radius: 4px !important;
         }
 
+        .leaflet-popup-content {
+            margin: 10px 12px !important;
+            max-width: calc(100vw - 72px) !important;
+            word-wrap: break-word;
+        }
+
+        .leaflet-popup-close-button {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 18px !important;
+            line-height: 26px !important;
+            color: var(--text-muted) !important;
+        }
+
         .leaflet-control-zoom {
             border: 1px solid var(--border-color) !important;
             border-radius: 3px !important;
@@ -541,10 +608,10 @@
         }
 
         .leaflet-control-zoom a {
-            width: 22px !important;
-            height: 22px !important;
-            line-height: 20px !important;
-            font-size: 13px !important;
+            width: 28px !important;
+            height: 28px !important;
+            line-height: 26px !important;
+            font-size: 15px !important;
             background: rgba(12, 18, 25, 0.92) !important;
             color: var(--accent-cyan) !important;
             border-bottom: 1px solid var(--border-color) !important;
@@ -566,7 +633,7 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 0.4rem;
-            padding: 0.38rem 0.75rem;
+            padding: 0.36rem 0.75rem;
             background: rgba(12, 18, 25, 0.96);
             border-bottom: 1px solid var(--border-color);
             font-family: var(--font-mono);
@@ -577,18 +644,19 @@
         .gt-stat-group {
             display: flex;
             align-items: center;
-            gap: 0.45rem;
+            gap: 0.42rem;
             flex-wrap: wrap;
         }
 
         .gt-stat-pill {
             display: flex;
             align-items: center;
-            gap: 0.3rem;
+            gap: 0.28rem;
             background: rgba(17, 25, 35, 0.9);
             border: 1px solid var(--border-color);
             padding: 0.15rem 0.44rem;
             border-radius: 3px;
+            white-space: nowrap;
         }
 
         .gt-stat-pill .count {
@@ -608,12 +676,13 @@
             display: flex;
             align-items: center;
             gap: 0.45rem;
-            margin-bottom: 0.22rem;
+            margin-bottom: 0.24rem;
             color: var(--text-muted);
             font-size: 0.66rem;
             cursor: pointer;
-            user-select: none;
             transition: opacity 0.18s, color 0.18s;
+            padding: 0.14rem 0;
+            min-height: 24px;
         }
 
         .legend-row:hover {
@@ -629,10 +698,10 @@
 
         .gt-legend-overlay {
             position: absolute;
-            bottom: 14px;
-            left: 12px;
+            bottom: calc(14px + var(--safe-bottom));
+            left: calc(12px + var(--safe-left));
             z-index: 500;
-            background: rgba(12, 18, 25, 0.93);
+            background: rgba(12, 18, 25, 0.94);
             border: 1px solid var(--border-color);
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
@@ -641,13 +710,14 @@
             font-family: var(--font-mono);
             font-size: 0.68rem;
             pointer-events: auto;
+            max-width: calc(100vw - 24px);
         }
 
         /* Live ADS-B Flight & Maritime Telemetry HUD Card (Top-Right of World Map) */
         .flight-hud-overlay {
             position: absolute;
             top: 10px;
-            right: 10px;
+            right: calc(10px + var(--safe-right));
             z-index: 500;
             background: rgba(10, 16, 24, 0.94);
             border: 1px solid rgba(56, 189, 248, 0.45);
@@ -672,6 +742,9 @@
             padding-bottom: 0.25rem;
             margin-bottom: 0.3rem;
             font-size: 0.68rem;
+            gap: 0.5rem;
+            cursor: pointer;
+            min-height: 24px;
         }
 
         .flight-hud-row {
@@ -680,6 +753,7 @@
             align-items: center;
             margin-bottom: 0.18rem;
             color: var(--text-muted);
+            gap: 0.5rem;
         }
 
         .flight-hud-row:last-child {
@@ -694,11 +768,11 @@
         /* Proximity Correlator HUD (Bottom-Right of World Map) */
         .proximity-hud-overlay {
             position: absolute;
-            bottom: 14px;
-            right: 12px;
-            z-index: 500;
-            background: rgba(10, 16, 24, 0.95);
-            border: 1px solid rgba(0, 242, 254, 0.5);
+            bottom: calc(14px + var(--safe-bottom));
+            right: calc(12px + var(--safe-right));
+            z-index: 505;
+            background: rgba(10, 16, 24, 0.96);
+            border: 1px solid rgba(0, 242, 254, 0.55);
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
             padding: 0.48rem 0.7rem;
@@ -707,7 +781,7 @@
             font-size: 0.66rem;
             pointer-events: auto;
             min-width: 235px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75);
             display: none;
         }
 
@@ -717,8 +791,8 @@
 
         .prox-radius-btns {
             display: flex;
-            gap: 0.25rem;
-            margin: 0.3rem 0;
+            gap: 0.28rem;
+            margin: 0.35rem 0;
         }
 
         .prox-rad-btn {
@@ -727,10 +801,11 @@
             border: 1px solid var(--border-color);
             color: var(--text-muted);
             font-family: var(--font-mono);
-            font-size: 0.62rem;
-            padding: 0.14rem 0.25rem;
+            font-size: 0.64rem;
+            padding: 0.22rem 0.25rem;
             border-radius: 2px;
             cursor: pointer;
+            min-height: 28px;
         }
 
         .prox-rad-btn.active {
@@ -744,13 +819,13 @@
             border: 1px solid var(--border-color);
             border-left: 3px solid #9F000F;
             border-radius: 4px;
-            padding: 0.68rem;
-            margin-bottom: 0.6rem;
+            padding: 0.72rem;
+            margin-bottom: 0.65rem;
             cursor: pointer;
             transition: background-color 0.18s, border-color 0.18s;
         }
 
-        .gt-incident-card:hover {
+        .gt-incident-card:hover, .gt-incident-card:active {
             background-color: #162230;
             border-color: var(--accent-cyan);
         }
@@ -772,14 +847,15 @@
             color: var(--text-muted);
             margin-bottom: 0.28rem;
             gap: 0.35rem;
+            flex-wrap: wrap;
         }
 
         .event-title {
-            font-size: 0.83rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: var(--text-main);
             margin-bottom: 0.24rem;
-            line-height: 1.35;
+            line-height: 1.38;
         }
 
         .event-title a {
@@ -793,21 +869,22 @@
         }
 
         .event-desc {
-            font-size: 0.73rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            line-height: 1.36;
+            line-height: 1.4;
         }
 
         .card-footer-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 0.42rem;
-            padding-top: 0.35rem;
+            margin-top: 0.48rem;
+            padding-top: 0.4rem;
             border-top: 1px solid rgba(30, 41, 59, 0.7);
             font-family: var(--font-mono);
-            font-size: 0.62rem;
+            font-size: 0.63rem;
             color: var(--text-muted);
+            gap: 0.4rem;
         }
 
         .card-mini-btn {
@@ -815,13 +892,14 @@
             border: 1px solid var(--border-color);
             color: var(--text-muted);
             font-family: var(--font-mono);
-            font-size: 0.6rem;
-            padding: 0.14rem 0.4rem;
+            font-size: 0.62rem;
+            padding: 0.2rem 0.48rem;
             border-radius: 2px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 0.25rem;
+            min-height: 28px;
         }
 
         .card-mini-btn:hover, .card-mini-btn.pinned {
@@ -860,25 +938,45 @@
             display: none;
             background: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
-            padding: 0.32rem 0.5rem;
+            padding: 0.34rem calc(0.5rem + var(--safe-right)) 0.34rem calc(0.5rem + var(--safe-left));
             gap: 0.4rem;
             flex-shrink: 0;
         }
 
+        .desktop-only-hint {
+            display: inline;
+        }
+
+        .mobile-gesture-hint {
+            display: none;
+            position: absolute;
+            top: 8px;
+            left: 50px;
+            z-index: 480;
+            background: rgba(12, 18, 25, 0.84);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            padding: 0.22rem 0.48rem;
+            border-radius: 3px;
+            pointer-events: none;
+        }
+
+        /* =====================================================================
+           TABLET & MOBILE RESPONSIVE OPTIMIZATION (<= 1100px)
+           ===================================================================== */
         @media (max-width: 1100px) {
             header {
-                padding: calc(0.32rem + env(safe-area-inset-top, 0px)) 0.5rem 0.32rem 0.5rem;
+                padding: calc(0.32rem + var(--safe-top)) calc(0.55rem + var(--safe-right)) 0.32rem calc(0.55rem + var(--safe-left));
             }
 
             .header-row-top {
                 display: flex;
                 justify-content: space-between;
-                flex-wrap: wrap;
+                align-items: center;
+                flex-wrap: nowrap;
                 gap: 0.35rem;
-            }
-
-            .header-telemetry {
-                padding-right: 0;
             }
 
             .overwatch-logo {
@@ -886,27 +984,39 @@
                 height: 28px;
             }
 
-            .brand h1 {
-                font-size: 0.96rem;
-                letter-spacing: 1.2px;
+            .brand {
+                gap: 0.45rem;
             }
 
-            .brand-sub {
+            .brand h1 {
+                font-size: 0.94rem;
+                letter-spacing: 1.1px;
+            }
+
+            .brand-sub, .desktop-only-hint {
                 display: none;
             }
 
+            .mobile-gesture-hint {
+                display: block;
+            }
+
             .gt-status-pill {
-                padding: 0.22rem 0.48rem;
-                font-size: 0.64rem;
+                padding: 0.24rem 0.48rem;
+                font-size: 0.65rem;
                 gap: 0.3rem;
             }
 
+            .gt-status-pill .pill-text {
+                display: none;
+            }
+
             .telemetry-box {
-                padding: 0.16rem 0.45rem;
+                padding: 0.16rem 0.42rem;
             }
 
             .telemetry-label {
-                font-size: 0.52rem;
+                font-size: 0.5rem;
             }
 
             .telemetry-val {
@@ -922,6 +1032,12 @@
                 display: flex;
             }
 
+            .gt-mobile-subtabs .tab-btn {
+                min-height: 38px;
+                font-size: 0.74rem;
+                font-weight: bold;
+            }
+
             .gt-map-stage.gt-mobile-hidden,
             .gt-feed-panel.gt-mobile-hidden {
                 display: none !important;
@@ -934,38 +1050,158 @@
                 height: 100%;
             }
 
-            .gt-legend-overlay {
-                padding: 0.38rem 0.5rem;
-                font-size: 0.6rem;
-                bottom: 8px;
-                left: 8px;
+            /* Horizontal touch-scroll strips for map controls, stats, and feed tabs */
+            .panel-header {
+                padding: 0.38rem 0.55rem;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .panel-header::-webkit-scrollbar { display: none; }
+
+            .map-layer-controls {
+                flex-wrap: nowrap;
+                flex-shrink: 0;
             }
 
+            .map-layer-controls .tab-btn {
+                min-height: 32px !important;
+                padding: 0.22rem 0.55rem !important;
+                font-size: 0.67rem !important;
+            }
+
+            .gt-stats-bar {
+                padding: 0.32rem 0.55rem;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .gt-stats-bar::-webkit-scrollbar { display: none; }
+
+            .gt-stat-group {
+                flex-wrap: nowrap;
+            }
+
+            .filter-strip {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding: 0.4rem 0.55rem;
+            }
+            .filter-strip::-webkit-scrollbar { display: none; }
+
+            .filter-strip .tab-btn {
+                flex: 0 0 auto;
+                min-height: 34px;
+                padding: 0.3rem 0.65rem;
+                font-size: 0.71rem;
+            }
+
+            /* Prevent iOS Safari input auto-zoom (requires >= 16px) */
+            .search-toolbar {
+                padding: 0.42rem 0.55rem;
+                gap: 0.35rem;
+            }
+
+            .search-input {
+                font-size: 16px;
+                min-height: 38px;
+                padding: 0.36rem 2rem 0.36rem 1.8rem;
+            }
+
+            .time-btn {
+                min-height: 38px;
+                padding: 0.3rem 0.5rem;
+                font-size: 0.69rem;
+            }
+
+            /* Larger touch zoom controls on mobile */
+            .leaflet-control-zoom a {
+                width: 34px !important;
+                height: 34px !important;
+                line-height: 32px !important;
+                font-size: 18px !important;
+            }
+
+            /* Collapsible HUD & Legend on Mobile to keep map canvas clear */
             .flight-hud-overlay {
                 top: 8px;
-                right: 8px;
-                min-width: 185px;
-                padding: 0.36rem 0.5rem;
-                font-size: 0.6rem;
+                right: calc(8px + var(--safe-right));
+                min-width: auto;
+                max-width: 215px;
+                padding: 0.38rem 0.55rem;
+                font-size: 0.63rem;
+            }
+
+            .flight-hud-overlay.mobile-collapsed .flight-hud-body {
+                display: none;
+            }
+
+            .flight-hud-overlay.mobile-collapsed .flight-hud-header {
+                border-bottom: none;
+                padding-bottom: 0;
+                margin-bottom: 0;
+            }
+
+            .gt-legend-overlay {
+                bottom: calc(10px + var(--safe-bottom));
+                left: calc(8px + var(--safe-left));
+                padding: 0.4rem 0.58rem;
+                font-size: 0.63rem;
+                max-width: 235px;
+            }
+
+            .gt-legend-overlay.mobile-collapsed .legend-body {
+                display: none;
+            }
+
+            .legend-row {
+                min-height: 28px;
+                padding: 0.2rem 0;
             }
 
             .proximity-hud-overlay {
-                bottom: 8px;
-                right: 8px;
-                min-width: 185px;
-                padding: 0.36rem 0.5rem;
-                font-size: 0.6rem;
+                bottom: calc(10px + var(--safe-bottom));
+                right: calc(8px + var(--safe-right));
+                min-width: 205px;
+                max-width: calc(100vw - 16px);
+                padding: 0.45rem 0.6rem;
+                font-size: 0.63rem;
+                z-index: 520;
+            }
+
+            .prox-rad-btn {
+                min-height: 34px;
+                font-size: 0.68rem;
+            }
+
+            .card-mini-btn {
+                min-height: 34px;
+                padding: 0.28rem 0.6rem;
+                font-size: 0.68rem;
             }
         }
 
-        @media (max-width: 420px) {
+        @media (max-width: 480px) {
+            .mobile-gesture-hint {
+                display: none;
+            }
             .brand h1 {
-                font-size: 0.9rem;
-                letter-spacing: 1px;
+                font-size: 0.84rem;
+                letter-spacing: 0.8px;
             }
             .brand h1 .num-tag {
-                font-size: 0.66rem;
-                padding: 0.02rem 0.26rem;
+                font-size: 0.62rem;
+                padding: 0.02rem 0.24rem;
+            }
+            .telemetry-label {
+                display: none;
+            }
+            .telemetry-val {
+                font-size: 0.64rem;
             }
         }
     </style>
@@ -1012,7 +1248,7 @@
                 <div class="gt-status-pill" title="Total Active Global Threats (Catastrophes + Accidents + Attacks)">
                     <span class="gt-pulse-dot"></span>
                     <i class="fa-solid fa-shield-halved"></i>
-                    <span>GLOBAL THREAT</span>
+                    <span class="pill-text">GLOBAL THREAT</span>
                     <span class="gt-pill-count" id="header-threat-total">0</span>
                 </div>
             </div>
@@ -1036,7 +1272,7 @@
             <button class="alert-action-btn" id="priority-alert-focus-btn" onclick="focusPriorityAlertTarget()">
                 <i class="fa-solid fa-crosshairs"></i> LOCATE
             </button>
-            <button class="alert-action-btn" onclick="dismissPriorityAlert()" title="Dismiss Alert">
+            <button class="alert-action-btn" onclick="dismissPriorityAlert()" title="Dismiss Alert" aria-label="Dismiss Alert">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -1057,30 +1293,30 @@
         <!-- Left / Main World Map Stage -->
         <div class="gt-map-stage" id="gt-map-stage">
             <div class="panel-header">
-                <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
-                    <span><i class="fa-solid fa-earth-americas" style="color: var(--accent-red); margin-right:0.25rem;"></i> GLOBAL THREAT, AIR &amp; SEA MONITOR</span>
+                <div style="display:flex; align-items:center; gap:0.45rem; flex-shrink:0;">
+                    <span><i class="fa-solid fa-earth-americas" style="color: var(--accent-red); margin-right:0.25rem;"></i> GLOBAL MONITOR</span>
                     <span id="gt-sync-badge" style="font-size:0.63rem; color:var(--accent-green);">INITIALIZING...</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap;">
-                    <button class="tab-btn flight-active" id="btn-toggle-adsb" style="min-height:23px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleAdsbTrafficLayer()" title="Toggle Live Global ADS-B Aircraft Traffic">
+                <div class="map-layer-controls">
+                    <button class="tab-btn flight-active" id="btn-toggle-adsb" style="min-height:24px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleAdsbTrafficLayer()" title="Toggle Live Global ADS-B Aircraft Traffic">
                         <i class="fa-solid fa-plane"></i> ADS-B
                     </button>
-                    <button class="tab-btn maritime-active" id="btn-toggle-ais" style="min-height:23px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleAisMaritimeLayer()" title="Toggle Global AIS Maritime Vessel Tracking">
+                    <button class="tab-btn maritime-active" id="btn-toggle-ais" style="min-height:24px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleAisMaritimeLayer()" title="Toggle Global AIS Maritime Vessel Tracking">
                         <i class="fa-solid fa-ship"></i> AIS SEA
                     </button>
-                    <button class="tab-btn tfr-active" id="btn-toggle-tfr" style="min-height:23px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleTfrAirspaceLayer()" title="Toggle Conflict Airspace &amp; TFR Zones">
+                    <button class="tab-btn tfr-active" id="btn-toggle-tfr" style="min-height:24px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleTfrAirspaceLayer()" title="Toggle Conflict Airspace &amp; TFR Zones">
                         <i class="fa-solid fa-ban"></i> TFR/NOTAM
                     </button>
-                    <button class="tab-btn solar-active" id="btn-toggle-solar" style="min-height:23px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleSolarTerminatorLayer()" title="Toggle Real-Time Day/Night Solar Terminator">
+                    <button class="tab-btn solar-active" id="btn-toggle-solar" style="min-height:24px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleSolarTerminatorLayer()" title="Toggle Real-Time Day/Night Solar Terminator">
                         <i class="fa-solid fa-circle-half-stroke"></i> SOLAR
                     </button>
-                    <button class="tab-btn" style="min-height:23px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleGlobalBasemapStyle()" title="Switch World Basemap Style">
+                    <button class="tab-btn" style="min-height:24px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="toggleGlobalBasemapStyle()" title="Switch World Basemap Style">
                         <i class="fa-solid fa-layer-group"></i> STYLE
                     </button>
-                    <button class="tab-btn" style="min-height:23px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="resetGlobalWorldView()" title="Reset Full World View">
+                    <button class="tab-btn" style="min-height:24px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="resetGlobalWorldView()" title="Reset Full World View">
                         <i class="fa-solid fa-compress-arrows-alt"></i> WORLD
                     </button>
-                    <button class="tab-btn" style="min-height:23px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="refreshAllGlobalSystems(true)" title="Sync Latest Global Incidents, Flights &amp; Vessels">
+                    <button class="tab-btn" style="min-height:24px; padding:0.12rem 0.44rem; font-size:0.63rem;" onclick="refreshAllGlobalSystems(true)" title="Sync Latest Global Incidents, Flights &amp; Vessels">
                         <i class="fa-solid fa-rotate"></i> SYNC
                     </button>
                 </div>
@@ -1115,45 +1351,52 @@
                         <span class="count" id="gt-count-attack" style="color:#f87171;">0</span>
                     </div>
                 </div>
-                <div style="color:var(--text-muted); font-size:0.62rem;">
-                    OPENSKY ADS-B • AIS MARITIME • USGS • NASA EONET
+                <div class="desktop-only-hint" style="color:var(--text-muted); font-size:0.62rem;">
+                    SHIFT+CLICK MAP FOR PROXIMITY RING • OPENSKY • AIS • USGS • NASA EONET
                 </div>
             </div>
 
             <div id="global-threat-map">
-                <!-- Live ADS-B & Maritime Telemetry HUD (Top-Right) -->
+                <div class="mobile-gesture-hint">HOLD MAP FOR PROXIMITY RING</div>
+
+                <!-- Live ADS-B & Maritime Telemetry HUD (Top-Right, collapsible on mobile) -->
                 <div class="flight-hud-overlay" id="flight-hud-card">
-                    <div class="flight-hud-header">
-                        <span><i class="fa-solid fa-satellite-dish"></i> AIR &amp; SEA TELEMETRY</span>
-                        <span id="flight-feed-status" style="color:#10b981; font-size:0.58rem;">LIVE ADS-B</span>
+                    <div class="flight-hud-header" onclick="toggleMobileHudCollapse('flight-hud-card')">
+                        <span><i class="fa-solid fa-satellite-dish"></i> TELEMETRY</span>
+                        <span style="display:flex; align-items:center; gap:0.35rem;">
+                            <span id="flight-feed-status" style="color:#10b981; font-size:0.58rem;">LIVE ADS-B</span>
+                            <i class="fa-solid fa-chevron-up" id="flight-hud-chevron" style="font-size:0.6rem; color:var(--text-muted);"></i>
+                        </span>
                     </div>
-                    <div class="flight-hud-row">
-                        <span>TRACKED FLIGHTS:</span>
-                        <span class="flight-hud-val" id="flight-hud-flights" style="color:#38bdf8;">SYNCING...</span>
-                    </div>
-                    <div class="flight-hud-row">
-                        <span>AVG CRUISE / SPD:</span>
-                        <span class="flight-hud-val" id="flight-hud-alt">--</span>
-                    </div>
-                    <div class="flight-hud-row">
-                        <span>MARITIME AIS:</span>
-                        <span class="flight-hud-val" id="maritime-hud-vessels" style="color:#2dd4bf;">0 CHOKEPOINTS</span>
-                    </div>
-                    <div class="flight-hud-row">
-                        <span>ACTIVE TFR / NOTAM:</span>
-                        <span class="flight-hud-val" id="tfr-hud-count" style="color:#f87171;">0 ZONES</span>
-                    </div>
-                    <div class="flight-hud-row">
-                        <span>SQUAWK 75/76/7700:</span>
-                        <span class="flight-hud-val" id="flight-hud-squawk" style="color:#10b981;">0 EMERGENCY</span>
+                    <div class="flight-hud-body">
+                        <div class="flight-hud-row">
+                            <span>TRACKED FLIGHTS:</span>
+                            <span class="flight-hud-val" id="flight-hud-flights" style="color:#38bdf8;">SYNCING...</span>
+                        </div>
+                        <div class="flight-hud-row">
+                            <span>AVG CRUISE / SPD:</span>
+                            <span class="flight-hud-val" id="flight-hud-alt">--</span>
+                        </div>
+                        <div class="flight-hud-row">
+                            <span>MARITIME AIS:</span>
+                            <span class="flight-hud-val" id="maritime-hud-vessels" style="color:#2dd4bf;">0 CHOKEPOINTS</span>
+                        </div>
+                        <div class="flight-hud-row">
+                            <span>ACTIVE TFR / NOTAM:</span>
+                            <span class="flight-hud-val" id="tfr-hud-count" style="color:#f87171;">0 ZONES</span>
+                        </div>
+                        <div class="flight-hud-row">
+                            <span>SQUAWK 75/76/7700:</span>
+                            <span class="flight-hud-val" id="flight-hud-squawk" style="color:#10b981;">0 EMERGENCY</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Proximity / Radius Correlator HUD (Bottom-Right) -->
                 <div class="proximity-hud-overlay" id="proximity-hud-card">
-                    <div class="flight-hud-header" style="color: var(--accent-cyan); border-bottom-color: rgba(0,242,254,0.25);">
-                        <span><i class="fa-solid fa-bullseye"></i> PROXIMITY CORRELATOR</span>
-                        <button onclick="clearProximityCorrelator()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.65rem;" title="Clear Radius Ring"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="flight-hud-header" style="color: var(--accent-cyan); border-bottom-color: rgba(0,242,254,0.25); cursor:default;">
+                        <span><i class="fa-solid fa-bullseye"></i> PROXIMITY SCAN</span>
+                        <button onclick="clearProximityCorrelator()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.85rem;min-width:28px;min-height:28px;" title="Clear Radius Ring" aria-label="Clear Proximity Scan"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <div style="color:#e2e8f0; font-size:0.64rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="prox-target-name">Target Zone</div>
                     <div class="prox-radius-btns">
@@ -1176,21 +1419,26 @@
                 </div>
             </div>
 
-            <!-- Interactive World Map Legend & Sub-Filter Overlay -->
-            <div class="gt-legend-overlay">
-                <div style="color: var(--accent-cyan); font-weight: bold; margin-bottom: 0.28rem; display:flex; justify-content:space-between; gap:0.6rem;">
-                    <span>THREAT &amp; TRAFFIC LAYERS</span>
-                    <span style="font-size:0.58rem; color:var(--text-muted);">CLICK TO TOGGLE</span>
+            <!-- Interactive World Map Legend & Sub-Filter Overlay (Collapsible on Mobile) -->
+            <div class="gt-legend-overlay" id="gt-legend-card">
+                <div style="color: var(--accent-cyan); font-weight: bold; display:flex; justify-content:space-between; align-items:center; gap:0.6rem; cursor:pointer; min-height:24px;" onclick="toggleMobileHudCollapse('gt-legend-card')">
+                    <span><i class="fa-solid fa-layer-group"></i> LAYERS</span>
+                    <span style="font-size:0.58rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:0.25rem;">
+                        <span>TOGGLE</span>
+                        <i class="fa-solid fa-chevron-up" id="gt-legend-chevron"></i>
+                    </span>
                 </div>
-                <div class="legend-row" onclick="toggleAdsbTrafficLayer()" id="legend-row-adsb"><i class="fa-solid fa-plane" style="color: #38bdf8; font-size: 0.66rem; width: 11px; text-align:center;"></i> Live Commercial / En-Route Aircraft</div>
-                <div class="legend-row" onclick="toggleAisMaritimeLayer()" id="legend-row-ais"><i class="fa-solid fa-ship" style="color: #2dd4bf; font-size: 0.66rem; width: 11px; text-align:center;"></i> AIS Maritime Vessels &amp; Chokepoints</div>
-                <div class="legend-row" onclick="toggleCatastropheSubFilter('quake')" id="legend-row-quake"><span class="dot-swatch" style="background: #000080; border: 1px solid #38bdf8; box-shadow: 0 0 6px #000080;"></span> Earthquakes (Seismic Telemetry)</div>
-                <div class="legend-row" onclick="toggleCatastropheSubFilter('tornado')" id="legend-row-tornado"><span class="dot-swatch" style="background: #50C878; box-shadow: 0 0 6px #50C878;"></span> Tornados &amp; Severe Storms</div>
-                <div class="legend-row" onclick="toggleCatastropheSubFilter('wildfire')" id="legend-row-wildfire"><span class="dot-swatch" style="background: #FFEF00; box-shadow: 0 0 6px #FFEF00;"></span> Wildfires &amp; Thermal Hotspots</div>
-                <div class="legend-row" onclick="toggleCatastropheSubFilter('volcano')" id="legend-row-volcano"><span class="dot-swatch" style="background: #473810; border: 1px solid #a88b4a; box-shadow: 0 0 6px #473810;"></span> Volcanic Eruptions &amp; Activity</div>
-                <div class="legend-row" onclick="setGlobalThreatFilter('accident', document.getElementById('tab-accident'))"><span class="dot-swatch" style="background: #6A0DAD; box-shadow: 0 0 6px #6A0DAD;"></span> Major Accidents (Aviation, Rail, Maritime)</div>
-                <div class="legend-row" onclick="setGlobalThreatFilter('attack', document.getElementById('tab-attack'))"><span class="dot-swatch" style="background: #9F000F; box-shadow: 0 0 6px #9F000F;"></span> Attacks &amp; Security Incidents</div>
-                <div class="legend-row" onclick="toggleTfrAirspaceLayer()" id="legend-row-tfr"><span style="display:inline-block; width:9px; height:9px; border:1px dashed #ef4444; background:rgba(159,0,15,0.25);"></span> TFR / Conflict Airspace NOTAMs</div>
+                <div class="legend-body" style="margin-top:0.3rem;">
+                    <div class="legend-row" onclick="toggleAdsbTrafficLayer()" id="legend-row-adsb"><i class="fa-solid fa-plane" style="color: #38bdf8; font-size: 0.66rem; width: 11px; text-align:center;"></i> Live Commercial / En-Route Aircraft</div>
+                    <div class="legend-row" onclick="toggleAisMaritimeLayer()" id="legend-row-ais"><i class="fa-solid fa-ship" style="color: #2dd4bf; font-size: 0.66rem; width: 11px; text-align:center;"></i> AIS Maritime Vessels &amp; Chokepoints</div>
+                    <div class="legend-row" onclick="toggleCatastropheSubFilter('quake')" id="legend-row-quake"><span class="dot-swatch" style="background: #000080; border: 1px solid #38bdf8; box-shadow: 0 0 6px #000080;"></span> Earthquakes (Seismic Telemetry)</div>
+                    <div class="legend-row" onclick="toggleCatastropheSubFilter('tornado')" id="legend-row-tornado"><span class="dot-swatch" style="background: #50C878; box-shadow: 0 0 6px #50C878;"></span> Tornados &amp; Severe Storms</div>
+                    <div class="legend-row" onclick="toggleCatastropheSubFilter('wildfire')" id="legend-row-wildfire"><span class="dot-swatch" style="background: #FFEF00; box-shadow: 0 0 6px #FFEF00;"></span> Wildfires &amp; Thermal Hotspots</div>
+                    <div class="legend-row" onclick="toggleCatastropheSubFilter('volcano')" id="legend-row-volcano"><span class="dot-swatch" style="background: #473810; border: 1px solid #a88b4a; box-shadow: 0 0 6px #473810;"></span> Volcanic Eruptions &amp; Activity</div>
+                    <div class="legend-row" onclick="setGlobalThreatFilter('accident', document.getElementById('tab-accident'))"><span class="dot-swatch" style="background: #6A0DAD; box-shadow: 0 0 6px #6A0DAD;"></span> Major Accidents (Aviation, Rail, Maritime)</div>
+                    <div class="legend-row" onclick="setGlobalThreatFilter('attack', document.getElementById('tab-attack'))"><span class="dot-swatch" style="background: #9F000F; box-shadow: 0 0 6px #9F000F;"></span> Attacks &amp; Security Incidents</div>
+                    <div class="legend-row" onclick="toggleTfrAirspaceLayer()" id="legend-row-tfr"><span style="display:inline-block; width:9px; height:9px; border:1px dashed #ef4444; background:rgba(159,0,15,0.25);"></span> TFR / Conflict Airspace NOTAMs</div>
+                </div>
             </div>
         </div>
 
@@ -1205,8 +1453,8 @@
             <div class="search-toolbar">
                 <div class="search-input-wrap">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="gt-search-input" class="search-input" placeholder="Filter region, keyword, callsign..." oninput="handleGlobalSearchInput(this.value)">
-                    <button id="gt-search-clear" class="search-clear-btn" onclick="clearGlobalSearch()" title="Clear Search"><i class="fa-solid fa-xmark"></i></button>
+                    <input type="search" enterkeyhint="search" id="gt-search-input" class="search-input" placeholder="Region, keyword, callsign..." oninput="handleGlobalSearchInput(this.value)">
+                    <button id="gt-search-clear" class="search-clear-btn" onclick="clearGlobalSearch()" title="Clear Search" aria-label="Clear Search"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="time-filter-group" title="Filter Incidents by Time Window">
                     <button class="time-btn" onclick="setGlobalTimeWindow(1, this)">1H</button>
@@ -1247,6 +1495,11 @@
         }
         setInterval(updateLiveClock, 1000);
         updateLiveClock();
+
+        // Pause expensive CSS animations when mobile app is backgrounded
+        document.addEventListener('visibilitychange', () => {
+            document.body.classList.toggle('app-paused', document.hidden);
+        });
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -1296,6 +1549,7 @@
         let globalThreatFilter = 'all';
         let globalSearchQuery = '';
         let globalTimeWindowHours = 168; // 7D default
+        let currentMobileSubView = 'map';
 
         // Individual toggles for Catastrophe sub-types
         let activeCatastropheSubtypes = {
@@ -1371,7 +1625,7 @@
             }
         }
 
-        // Airline ICAO Callsign Prefix Lookup for Enhanced ADS-B Telemetry Popups
+        // Airline ICAO Callsign Prefix Lookup
         const AIRLINE_CALLSIGN_MAP = {
             'UAL': { name: 'United Airlines', type: 'B77W / B789', corridor: 'Transatlantic / CONUS' },
             'AAL': { name: 'American Airlines', type: 'B772 / A321', corridor: 'North America / Europe' },
@@ -1407,7 +1661,7 @@
             return { name: 'Commercial / Private Operator', type: 'ADS-B Equipped', corridor: 'En-Route Airspace' };
         }
 
-        // World Gazetteer for fast, zero-latency geo-placement of global dispatches
+        // World Gazetteer
         const WORLD_GEO_GAZETTEER = [
             { keys: ['ukraine', 'kyiv', 'kharkiv', 'odesa', 'donbas', 'dnipro', 'zaporizhzhia'], lat: 49.0139, lon: 31.2858, region: 'Ukraine' },
             { keys: ['russia', 'moscow', 'belgorod', 'kursk', 'crimea', 'st. petersburg', 'kamchatka'], lat: 55.7558, lon: 37.6173, region: 'Russia' },
@@ -1483,6 +1737,15 @@
             return null;
         }
 
+        function getResponsivePopupOptions(preferredWidth = 230) {
+            const maxW = Math.min(preferredWidth, Math.max(190, window.innerWidth - 76));
+            return {
+                maxWidth: maxW,
+                autoPanPaddingTopLeft: L.point(16, 56),
+                autoPanPaddingBottomRight: L.point(16, 64)
+            };
+        }
+
         // =========================================================================
         // 3. MAP INITIALIZATION & LAYER TOGGLES
         // =========================================================================
@@ -1494,7 +1757,9 @@
                 minZoom: 2,
                 maxZoom: 14,
                 worldCopyJump: true,
-                zoomControl: true
+                zoomControl: true,
+                tap: true,
+                tapTolerance: 15
             });
 
             globalDarkBaseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
@@ -1520,16 +1785,67 @@
             globalThreatMarkersLayer = L.layerGroup().addTo(globalThreatMap);
             globalProximityLayer = L.layerGroup().addTo(globalThreatMap);
 
-            // Allow clicking anywhere on the map with Shift+Click to drop a Proximity Correlator ring
+            // Desktop Shift+Click to drop a Proximity Correlator ring
             globalThreatMap.on('click', (e) => {
                 if (e.originalEvent && e.originalEvent.shiftKey) {
                     activateProximityCorrelator(e.latlng.lat, e.latlng.lng, `Custom Sector (${e.latlng.lat.toFixed(2)}°, ${e.latlng.lng.toFixed(2)}°)`);
                 }
             });
 
+            // Mobile Long-Press / ContextMenu to drop a Proximity Correlator ring
+            globalThreatMap.on('contextmenu', (e) => {
+                activateProximityCorrelator(e.latlng.lat, e.latlng.lng, `Custom Sector (${e.latlng.lat.toFixed(2)}°, ${e.latlng.lng.toFixed(2)}°)`);
+            });
+
             drawSolarTerminator();
             plotTfrAndConflictAirspace();
             plotMaritimeAisVessels();
+        }
+
+        function setMobileHudCollapseState(cardId, collapse) {
+            const card = document.getElementById(cardId);
+            if (!card) return;
+            card.classList.toggle('mobile-collapsed', collapse);
+            const chevron = card.querySelector('.fa-chevron-up, .fa-chevron-down');
+            if (chevron) {
+                chevron.classList.toggle('fa-chevron-up', !collapse);
+                chevron.classList.toggle('fa-chevron-down', collapse);
+            }
+        }
+
+        function toggleMobileHudCollapse(cardId) {
+            if (window.innerWidth > 1100) return;
+            const card = document.getElementById(cardId);
+            if (!card) return;
+            const willExpand = card.classList.contains('mobile-collapsed');
+            setMobileHudCollapseState(cardId, !willExpand);
+
+            // Prevent bottom-left Legend and bottom-right Proximity HUD from overlapping on phones
+            if (willExpand && cardId === 'gt-legend-card') {
+                const proxCard = document.getElementById('proximity-hud-card');
+                if (proxCard && proxCard.classList.contains('visible')) {
+                    clearProximityCorrelator();
+                }
+            }
+        }
+
+        function syncResponsiveLayoutState() {
+            const isMobile = window.innerWidth <= 1100;
+            const mapStage = document.getElementById('gt-map-stage');
+            const feedPanel = document.getElementById('gt-feed-panel');
+
+            if (!isMobile) {
+                mapStage.classList.remove('gt-mobile-hidden');
+                feedPanel.classList.remove('gt-mobile-hidden');
+                setMobileHudCollapseState('flight-hud-card', false);
+                setMobileHudCollapseState('gt-legend-card', false);
+            } else {
+                switchGtMobileSubView(currentMobileSubView, false);
+            }
+
+            if (globalThreatMap) {
+                setTimeout(() => globalThreatMap.invalidateSize(), 60);
+            }
         }
 
         function toggleAdsbTrafficLayer() {
@@ -1615,7 +1931,8 @@
             globalUsingDarkMap = !globalUsingDarkMap;
         }
 
-        function switchGtMobileSubView(subView) {
+        function switchGtMobileSubView(subView, triggerResize = true) {
+            currentMobileSubView = subView;
             const mapStage = document.getElementById('gt-map-stage');
             const feedPanel = document.getElementById('gt-feed-panel');
             const mapBtn = document.getElementById('gt-sub-map-btn');
@@ -1626,7 +1943,7 @@
                 feedPanel.classList.add('gt-mobile-hidden');
                 mapBtn.classList.add('active');
                 feedBtn.classList.remove('active');
-                if (globalThreatMap) setTimeout(() => globalThreatMap.invalidateSize(), 60);
+                if (triggerResize && globalThreatMap) setTimeout(() => globalThreatMap.invalidateSize(), 60);
             } else {
                 mapStage.classList.add('gt-mobile-hidden');
                 feedPanel.classList.remove('gt-mobile-hidden');
@@ -1653,7 +1970,6 @@
             const diff = now - startOfYear;
             const dayOfYear = Math.floor(diff / 86400000);
 
-            // Approximate solar declination & subsolar longitude
             const decl = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10));
             const declRad = decl * Math.PI / 180;
             const utcHours = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
@@ -1667,7 +1983,6 @@
                 latLngs.push([latDeg, lon]);
             }
 
-            // Close polygon over night hemisphere
             const nightPoleLat = decl >= 0 ? -85 : 85;
             const polyCoords = [
                 [nightPoleLat, -180],
@@ -1728,12 +2043,12 @@
                 })
                 .addTo(globalTfrAirspaceLayer)
                 .bindPopup(`
-                    <div style="min-width:200px;">
+                    <div>
                         <div style="font-size:0.66rem; color:#fca5a5; font-weight:bold;">TFR / CONFLICT AIRSPACE</div>
                         <div style="font-size:0.76rem; font-weight:bold; margin:2px 0;">${escapeHtml(z.name)}</div>
                         <div style="font-size:0.66rem; color:#94a3b8;">${escapeHtml(z.notam)}</div>
                     </div>
-                `);
+                `, getResponsivePopupOptions(210));
             });
 
             const tfrHud = document.getElementById('tfr-hud-count');
@@ -1744,7 +2059,6 @@
             if (!globalAisMaritimeLayer) return;
             globalAisMaritimeLayer.clearLayers();
 
-            // Major global maritime chokepoint AIS vessel telemetry
             liveMaritimeVessels = [
                 { name: 'MT PACIFIC VANGUARD', type: 'VLCC Crude Tanker', flag: 'Marshall Islands', mmsi: '538009412', lat: 26.56, lon: 56.25, speed: 12.4, heading: 112, dest: 'JEBEL ALI -> SINGAPORE', chokepoint: 'Strait of Hormuz' },
                 { name: 'MV MAERSK SELETAN', type: 'Ultra-Large Container', flag: 'Denmark', mmsi: '219028411', lat: 12.68, lon: 43.32, speed: 16.8, heading: 328, dest: 'SALALAH -> JEDDAH', chokepoint: 'Bab-el-Mandeb' },
@@ -1760,16 +2074,16 @@
 
             liveMaritimeVessels.forEach(v => {
                 const shipIcon = L.divIcon({
-                    className: 'ais-vessel-pin',
-                    html: `<div style="color:#2dd4bf; font-size:11px; text-shadow: 0 0 6px rgba(45,212,191,0.85); line-height:1;">
+                    className: 'ais-vessel-pin tactical-pin-hit',
+                    html: `<div style="color:#2dd4bf; font-size:13px; text-shadow: 0 0 6px rgba(45,212,191,0.85); line-height:1;">
                              <i class="fa-solid fa-ship"></i>
                            </div>`,
-                    iconSize: [14, 14],
-                    iconAnchor: [7, 7]
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
                 });
 
                 const popupHtml = `
-                    <div style="min-width:215px;">
+                    <div>
                         <div style="font-size:0.66rem; color:#2dd4bf; font-weight:bold; margin-bottom:2px;">AIS TRANSPONDER // ${escapeHtml(v.chokepoint.toUpperCase())}</div>
                         <div style="font-size:0.78rem; font-weight:bold; color:#f1f5f9; margin-bottom:2px;">${escapeHtml(v.name)}</div>
                         <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:4px;">${escapeHtml(v.type)} • Flag: ${escapeHtml(v.flag)} (MMSI ${escapeHtml(v.mmsi)})</div>
@@ -1783,7 +2097,7 @@
 
                 L.marker([v.lat, v.lon], { icon: shipIcon })
                     .addTo(globalAisMaritimeLayer)
-                    .bindPopup(popupHtml);
+                    .bindPopup(popupHtml, getResponsivePopupOptions(220));
             });
 
             document.getElementById('gt-count-vessels').textContent = liveMaritimeVessels.length;
@@ -1796,6 +2110,9 @@
         // =========================================================================
         function activateProximityCorrelator(lat, lon, label) {
             proximityTarget = { lat, lon, label };
+            if (window.innerWidth <= 1100) {
+                setMobileHudCollapseState('gt-legend-card', true);
+            }
             renderProximityCorrelator();
         }
 
@@ -1850,7 +2167,6 @@
         // 6. PRIORITY EMERGENCY BANNER (SQUAWK 7500/7600/7700 & M6.0+ SEISMIC)
         // =========================================================================
         function evaluatePriorityAlerts() {
-            // Check emergency squawks first
             const emergFlight = liveAircraftList.find(ac =>
                 ['7500', '7600', '7700'].includes(String(ac.squawk)) &&
                 !dismissedAlertIds.has(`sq-${ac.icao24}-${ac.squawk}`)
@@ -1869,7 +2185,6 @@
                 return;
             }
 
-            // Check M6.0+ earthquakes
             const majorQuake = globalThreatItems.find(item =>
                 item.subType === 'quake' &&
                 (item.magnitude || 0) >= 6.0 &&
@@ -1952,8 +2267,9 @@
                     s[8] === false
                 );
 
-                const step = Math.max(1, Math.floor(airborne.length / 180));
-                for (let i = 0; i < airborne.length && liveAircraftList.length < 180; i += step) {
+                const maxPlotted = window.innerWidth <= 1100 ? 120 : 180;
+                const step = Math.max(1, Math.floor(airborne.length / maxPlotted));
+                for (let i = 0; i < airborne.length && liveAircraftList.length < maxPlotted; i += step) {
                     const s = airborne[i];
                     const icao24 = s[0] || 'N/A';
                     const callsign = (s[1] || '').trim() || `ICAO-${icao24.toUpperCase()}`;
@@ -2059,18 +2375,18 @@
                 const rotation = (ac.heading || 0) - 45;
 
                 const planeIcon = L.divIcon({
-                    className: 'adsb-plane-pin',
-                    html: `<div style="transform: rotate(${rotation}deg); color:${color}; font-size:${isSearchHit ? '15px' : '12px'}; text-shadow: 0 0 6px rgba(56,189,248,0.85); line-height:1;">
+                    className: 'adsb-plane-pin tactical-pin-hit',
+                    html: `<div style="transform: rotate(${rotation}deg); color:${color}; font-size:${isSearchHit ? '16px' : '13px'}; text-shadow: 0 0 6px rgba(56,189,248,0.85); line-height:1;">
                              <i class="fa-solid fa-plane"></i>
                            </div>`,
-                    iconSize: [14, 14],
-                    iconAnchor: [7, 7]
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
                 });
 
                 const climbIndicator = ac.vertFpm > 250 ? `▲ +${ac.vertFpm} fpm` : (ac.vertFpm < -250 ? `▼ ${ac.vertFpm} fpm` : '► LEVEL');
 
                 const popupHtml = `
-                    <div style="min-width:225px;">
+                    <div>
                         <div style="font-size:0.68rem; color:${color}; font-weight:bold; margin-bottom:2px;">ADS-B TRANSPONDER // ${escapeHtml(ac.callsign)}</div>
                         <div style="font-size:0.75rem; font-weight:bold; color:#f1f5f9;">${escapeHtml(ac.operator)}</div>
                         <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:4px;">${escapeHtml(ac.aircraftType)} • ${escapeHtml(ac.country)} (${escapeHtml(ac.icao24.toUpperCase())})</div>
@@ -2081,8 +2397,8 @@
                             <div><span style="color:#94a3b8;">SQUAWK:</span><br><strong style="color:${isEmergSquawk ? '#ef4444' : '#10b981'};">${escapeHtml(ac.squawk)}</strong></div>
                         </div>
                         <div style="font-size:0.64rem; color:#7dd3fc; margin-top:4px;">CORRIDOR: ${escapeHtml(ac.corridor)} • ${climbIndicator}</div>
-                        <div style="margin-top:5px;">
-                            <button onclick="pinCustomCoordinateToWatchlist('${escapeHtml(ac.callsign)} (${escapeHtml(ac.operator)})', ${ac.lat}, ${ac.lon}, 'FLIGHT WATCH')" style="background:#0f172a; border:1px solid #00f2fe; color:#00f2fe; font-family:var(--font-mono); font-size:0.62rem; padding:2px 6px; border-radius:2px; cursor:pointer;">
+                        <div style="margin-top:6px;">
+                            <button onclick="pinCustomCoordinateToWatchlist('${escapeHtml(ac.callsign)} (${escapeHtml(ac.operator)})', ${ac.lat}, ${ac.lon}, 'FLIGHT WATCH')" style="background:#0f172a; border:1px solid #00f2fe; color:#00f2fe; font-family:var(--font-mono); font-size:0.64rem; padding:6px 10px; border-radius:2px; cursor:pointer; min-height:30px;">
                                 + PIN TO WATCHLIST
                             </button>
                         </div>
@@ -2091,7 +2407,7 @@
 
                 L.marker([ac.lat, ac.lon], { icon: planeIcon })
                     .addTo(globalAdsbAircraftLayer)
-                    .bindPopup(popupHtml);
+                    .bindPopup(popupHtml, getResponsivePopupOptions(230));
             });
 
             const count = liveAircraftList.length;
@@ -2144,7 +2460,6 @@
             return [];
         }
 
-        // Deduplicate wire reports covering the same category & region within 12 hours
         function deduplicateIncidentCluster(items) {
             const clustered = [];
             items.forEach(item => {
@@ -2174,24 +2489,20 @@
 
         async function refreshGlobalThreatData(manual = false) {
             const syncBadge = document.getElementById('gt-sync-badge');
-            if (syncBadge) syncBadge.textContent = manual ? 'SYNCING GLOBAL FEEDS...' : 'ACQUIRING GLOBAL TELEMETRY...';
+            if (syncBadge) syncBadge.textContent = manual ? 'SYNCING...' : 'ACQUIRING...';
 
             const collected = [];
 
-            // 1. Global Significant Earthquakes (USGS M4.5+ last 24h) -> CATASTROPHES (Quake: #000080)
             const usgsPromise = fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson')
                 .then(r => r.ok ? r.json() : null)
                 .catch(() => null);
 
-            // 2. Global Natural Catastrophes (NASA EONET Active Events) -> CATASTROPHES (Tornados: #50C878, Wildfires: #FFEF00, Volcanoes: #473810)
             const eonetPromise = fetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=30')
                 .then(r => r.ok ? r.json() : null)
                 .catch(() => null);
 
-            // 3. Global Major Accidents -> ACCIDENTS (#6A0DAD)
             const accidentsPromise = fetchRssSearchItems('("plane crash" OR "train derailment" OR "ship collision" OR "industrial explosion" OR "oil spill" OR "bridge collapse") when:3d', 18);
 
-            // 4. Global Attacks & Armed Strikes -> ATTACKS (#9F000F)
             const attacksPromise = fetchRssSearchItems('("airstrike" OR "missile strike" OR "drone attack" OR "terror attack" OR "bombing" OR "cyberattack") when:2d', 20);
 
             const [usgsData, eonetData, accidentArticles, attackArticles] = await Promise.all([
@@ -2324,7 +2635,7 @@
         function handleGlobalSearchInput(val) {
             globalSearchQuery = val || '';
             const clearBtn = document.getElementById('gt-search-clear');
-            if (clearBtn) clearBtn.style.display = globalSearchQuery ? 'block' : 'none';
+            if (clearBtn) clearBtn.style.display = globalSearchQuery ? 'flex' : 'none';
             renderGlobalThreatFeed();
             plotGlobalThreatMarkers();
             plotLiveAircraftOnMap(liveAircraftList.length);
@@ -2426,7 +2737,7 @@
                     <div class="event-desc">${escapeHtml(item.desc)}</div>
                     <div class="card-footer-actions">
                         <span>${item.lat.toFixed(2)}°, ${item.lon.toFixed(2)}°</span>
-                        <div style="display:flex; gap:0.3rem;">
+                        <div style="display:flex; gap:0.35rem;">
                             <button class="card-mini-btn" onclick="event.stopPropagation(); focusGlobalIncident(${item.lat}, ${item.lon}, '${escapeHtml(item.region)}')" title="Draw Proximity Radius">
                                 <i class="fa-solid fa-bullseye"></i> RADIUS
                             </button>
@@ -2436,7 +2747,7 @@
                         </div>
                     </div>
                 </div>
-            `}).join('') || `<div style="color:var(--text-muted);font-size:0.78rem;">${globalThreatFilter === 'watchlist' ? 'Your Watchlist is empty. Click WATCH on any incident or pin an aircraft/vessel on the map.' : 'No global incidents match the active filters or time window.'}</div>`;
+            `}).join('') || `<div style="color:var(--text-muted);font-size:0.78rem;">${globalThreatFilter === 'watchlist' ? 'Your Watchlist is empty. Tap WATCH on any incident or pin an aircraft on the map.' : 'No global incidents match the active filters or time window.'}</div>`;
         }
 
         function plotGlobalThreatMarkers() {
@@ -2458,20 +2769,20 @@
                 }
 
                 const pinIcon = L.divIcon({
-                    className: 'gt-world-pin',
-                    html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid ${borderColor};box-shadow:0 0 10px ${color};"></div>`,
-                    iconSize: [12, 12],
-                    iconAnchor: [6, 6]
+                    className: 'gt-world-pin tactical-pin-hit',
+                    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid ${borderColor};box-shadow:0 0 10px ${color};"></div>`,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
                 });
 
                 const popupHtml = `
-                    <div style="max-width:245px;">
+                    <div>
                         <div style="font-size:0.66rem; color:${titleColor}; font-weight:bold; margin-bottom:2px;">${escapeHtml(item.badge)} // ${escapeHtml(item.region)}</div>
                         <div style="font-size:0.78rem; font-weight:bold; margin-bottom:4px; line-height:1.3;">${escapeHtml(item.title)}</div>
-                        <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:5px;">${escapeHtml(item.desc)}</div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                            ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener" style="color:#00f2fe; font-size:0.66rem; text-decoration:underline;">DISPATCH &rarr;</a>` : '<span></span>'}
-                            <button onclick="activateProximityCorrelator(${item.lat}, ${item.lon}, '${escapeHtml(item.region)}')" style="background:#0f172a; border:1px solid #00f2fe; color:#00f2fe; font-family:var(--font-mono); font-size:0.6rem; padding:2px 5px; border-radius:2px; cursor:pointer;">
+                        <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:6px;">${escapeHtml(item.desc)}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                            ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener" style="color:#00f2fe; font-size:0.68rem; text-decoration:underline; padding:4px 0;">DISPATCH &rarr;</a>` : '<span></span>'}
+                            <button onclick="activateProximityCorrelator(${item.lat}, ${item.lon}, '${escapeHtml(item.region)}')" style="background:#0f172a; border:1px solid #00f2fe; color:#00f2fe; font-family:var(--font-mono); font-size:0.64rem; padding:6px 9px; border-radius:2px; cursor:pointer; min-height:30px;">
                                 SCAN RADIUS
                             </button>
                         </div>
@@ -2480,7 +2791,7 @@
 
                 L.marker([item.lat, item.lon], { icon: pinIcon })
                     .addTo(globalThreatMarkersLayer)
-                    .bindPopup(popupHtml);
+                    .bindPopup(popupHtml, getResponsivePopupOptions(240));
             });
         }
 
@@ -2505,25 +2816,55 @@
             ]);
         }
 
-        window.addEventListener('resize', () => {
-            if (globalThreatMap) globalThreatMap.invalidateSize();
-        });
+        // Mobile Horizontal Swipe Gesture on Feed Panel to return to Map
+        (function initMobileSwipeGestures() {
+            const feedPanel = document.getElementById('gt-feed-panel');
+            if (!feedPanel) return;
+            let touchStartX = 0;
+            let touchStartY = 0;
+            feedPanel.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+            feedPanel.addEventListener('touchend', (e) => {
+                if (window.innerWidth > 1100 || e.changedTouches.length !== 1) return;
+                const dx = e.changedTouches[0].clientX - touchStartX;
+                const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+                if (dx > 85 && dy < 45) {
+                    switchGtMobileSubView('map');
+                }
+            }, { passive: true });
+        })();
+
+        window.addEventListener('resize', syncResponsiveLayoutState);
+        window.addEventListener('orientationchange', () => setTimeout(syncResponsiveLayoutState, 150));
 
         // Boot OVERWATCH GLOBAL Dashboard
         window.onload = async () => {
             persistWatchlist();
             initGlobalThreatMap();
-            setTimeout(() => { if (globalThreatMap) globalThreatMap.invalidateSize(); }, 100);
+
+            // Collapse floating map HUD cards by default on small mobile screens for clear map visibility
+            if (window.innerWidth <= 1100) {
+                setMobileHudCollapseState('flight-hud-card', true);
+                setMobileHudCollapseState('gt-legend-card', true);
+            }
+
+            syncResponsiveLayoutState();
             await refreshAllGlobalSystems(false);
 
             // Refresh live ADS-B air traffic & solar terminator every 60 seconds
             setInterval(() => {
+                if (document.hidden) return;
                 drawSolarTerminator();
                 fetchLiveGlobalAdsbTraffic();
             }, 60000);
 
             // Refresh global threat dispatch feeds every 5 minutes
             setInterval(() => {
+                if (document.hidden) return;
                 refreshGlobalThreatData(false);
             }, 300000);
         };
